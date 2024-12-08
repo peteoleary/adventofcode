@@ -36,7 +36,6 @@ fn find_first_match(input: &str) -> Option<regex::Match> {
 
 fn with_regex() {
     let input = std::fs::read_to_string("src/input_big.txt").unwrap();
-    let re = regex::Regex::new(r"mul\((\d+)\,(\d+)\)").unwrap();
     let mut sum = 0;
     let mut i = 0;
     let mut do_adding = true;
@@ -57,7 +56,7 @@ fn with_regex() {
                 println!("don't() found");
             }
             _ => {
-                let (a, b, len) = parse_mul(&m.as_str()).unwrap();
+                let (a, b, _len) = parse_mul(&m.as_str()).unwrap();
                 if do_adding {
                     println!("{} * {} = ", a, b);
                     sum += a * b;
