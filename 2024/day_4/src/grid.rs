@@ -45,6 +45,17 @@ impl Grid {
         }
     }
 
+    pub fn set_pattern(&mut self, x: usize, y: usize, pattern: &Grid) {
+        for py in 0..pattern.height {
+            for px in 0..pattern.width {
+                if pattern.get(px, py) == '.' {
+                    continue;
+                }
+                self.set(x + px, y + py, pattern.get(px, py));
+            }
+        }
+    }
+
     pub fn print(&self) {
         for row in &self.data {
             for cell in row {
@@ -140,7 +151,6 @@ impl Grid {
         for _ in 0..rotations {
             new_grid = new_grid.rotate_right()
         }
-        new_grid.print();
         new_grid
     }
     

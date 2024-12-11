@@ -39,26 +39,27 @@ fn part_1() {
 }
 
 fn part_2() {
-    let input = std::fs::read_to_string("src/test_input.txt").unwrap();
+    let input = std::fs::read_to_string("src/big_input.txt").unwrap();
     let input_grid = Grid::from_string(&input);
     let mut output_grid = Grid::new(input_grid.width, input_grid.height);
-    let pattern_string = "M.S\n.A.\nM.S\n";
-    let mut pattern = Grid::from_string(pattern_string);
+    let mut pattern = Grid::from_string("M.S\n.A.\nM.S\n");
     let mut xmas_count = 0;
     for y in 0..input_grid.height {
         for x in 0..input_grid.width {
-            for direction in Direction::iter() {
-                pattern.set_orientation(direction);
+            for _ in 0..4 {
                 if input_grid.match_pattern(x, y, &pattern) {
                     println!("Found XMAS at ({}, {})", y, x);
+                    output_grid.set_pattern(x, y, &pattern);
                     xmas_count += 1;
                     break;
                 }
+                pattern = pattern.rotate_right().rotate_right();
             }
         }
         
     }
     println!("XMAS count: {}", xmas_count);
+    output_grid.print();
 }
 
 fn main() {
