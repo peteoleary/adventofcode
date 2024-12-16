@@ -1,5 +1,4 @@
-use std::{collections::HashMap, thread::panicking};
-
+use std::collections::HashMap;
 use petgraph::graphmap::GraphMap;
 
 // return true if there exists a path from start to end going only in the forward direction
@@ -12,7 +11,7 @@ fn is_before(dag: &GraphMap<u32, (), petgraph::Directed>, start: u32, end: u32) 
             return true;
         }
         if visited.contains_key(&node) {
-            panic!("Cycle detected");
+            continue;
         }
         else {        
             visited.insert(node, true);
@@ -75,9 +74,15 @@ fn main() {
             let parts: Vec<&str> = line.split("|").collect();
             let parent: u32 = parts[0].parse().unwrap();
             let child: u32 = parts[1].parse().unwrap();
-            dag.add_node(parent);
-            dag.add_node(child);
-            dag.add_edge(parent, child, ());
+            if !dag.contains_node(parent) {
+                dag.add_node(parent);
+            }
+            if !dag.contains_node(child) {
+                dag.add_node(child);
+            }
+            if !dag.contains_edge(parent, child) {
+                dag.add_edge(parent, child, ());
+            }
         } else { // reading updates
             let updates = line.split(",").map(|x| x.parse().unwrap()).collect();
             if correct_updates(&dag, &updates) {
@@ -88,5 +93,5 @@ fn main() {
             }
         }
     }
-    print!("Sum: {}", sum);
+    println!("Sum: {}", sum);
 }
