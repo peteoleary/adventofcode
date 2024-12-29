@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use strum_macros::{Display, EnumIter};
 
-#[derive(Debug, Display, Clone, Copy, EnumIter)]
+#[derive(Debug, Display, Clone, Copy, EnumIter, PartialEq, Eq, Hash)]
 pub enum Direction {
     North,
     NorthEast,
@@ -25,6 +25,7 @@ lazy_static! {
         map.insert('<', Direction::West);
         map
     };
+    static ref TRAILS: HashMap<Direction, char> = DIRECTIONS.iter().map(|(k, v)| (*v, *k)).collect();
 }
 
 pub struct GridIterator {
@@ -56,6 +57,14 @@ impl<'a> GridIterator {
 
     pub fn get_direction(&self) -> Direction {
         self.direction
+    }
+
+    pub fn get_trail_char(&self) -> char {
+        *TRAILS.get(&self.direction).unwrap()
+    }
+
+    pub fn get_all_trail_chars() -> HashMap<Direction, char> {
+        TRAILS.clone()
     }
 
     pub fn turn_right(&mut self) {
