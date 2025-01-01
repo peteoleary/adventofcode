@@ -98,7 +98,7 @@ fn set_grid_antinode(grid: &mut Grid, antinode: Option<Point>) -> bool {
     false
 }
 
-fn handle_one_layer(grid: &Grid, c: char) -> (Grid, i32) {
+fn handle_one_layer(grid: &Grid, c: char, ) -> (Grid, i32) {
     let layer = find_all_points(&grid, c);
     // let layer_0 = find_all_points(&input_grid, '0');
     let connections = connect_all_points(layer, grid);
@@ -143,23 +143,27 @@ fn merge_grids(grids: Vec<Grid>) -> (Grid, i32) {
     (new_grid, count)
 }
 
-fn main() {
-    let input = std::fs::read_to_string("src/big_input.txt").unwrap();
-    let input_grid = Grid::from_string(&input);
-    let layers = find_layers(&input);
-    println!("input_grid");
-    input_grid.print();
+fn handle_one_grid(input: &str) -> (Grid, i32) {
+    let input_grid = Grid::from_string(input);
+    let layers = find_layers(input);
     let mut output_grids = Vec::new();
     for layer in layers {
-        let (layer_grid, layer_count) = handle_one_layer(&input_grid, layer);
+        let (layer_grid, _layer_count) = handle_one_layer(&input_grid, layer);
         println!("grid after layer: {}", layer);
         layer_grid.print();
         output_grids.push(layer_grid);
     }
-    let (result_grid, count) = merge_grids(output_grids);
-    println!("result_grid");
-    result_grid.print();
-    println!("count: {}", count);
+    let (final_grid, final_count) = merge_grids(output_grids);
+    println!("final_grid");
+    final_grid.print();
+    println!("count: {}", final_count);
+    (final_grid, final_count)
+}
+
+fn main() {
+    let input = std::fs::read_to_string("src/test_input.txt").unwrap();
+    let input_grid = Grid::from_string(&input);
+    handle_one_grid(&input);
 }
 
 #[cfg(test)]
@@ -182,5 +186,14 @@ mod tests {
         let connections = connect_all_points(points, &grid);
         assert_eq!(connections.len(), 1);
         assert_eq!(connections[0], Antenna::new(Point::new(0, 0), Point::new(1, 1)));
+    }
+
+    #[test]
+    fn test_input_2() {
+        let input = std::fs::read_to_string("src/test_input_2.txt").unwrap();
+        let (final_grid, _final_count) = handle_one_grid(&input);
+        let input_2 = std::fs::read_to_string("src/test_output_2.txt").unwrap();
+        let input_grid_2 = Grid::from_string(&input_2);
+        assert_eq!(final_grid, input_grid_2);
     }
 }
