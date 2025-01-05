@@ -19,10 +19,16 @@ impl PartialOrd for Point {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 struct Antenna {
     positions: (Point, Point),
-    antinodes: (Option<Point>, Option<Point>)
+    antinodes: Vec<Point>
+}
+
+impl Clone for Antenna {
+    fn clone(&self) -> Self {
+        Antenna { positions: self.positions, antinodes: self.antinodes.clone() }
+    }
 }
 
 impl PartialEq for Antenna {
@@ -35,7 +41,7 @@ impl Antenna {
     fn new(a: Point, b:Point) -> Antenna {
         let mut positions = vec![a, b];
         positions.sort();
-        Antenna{ positions: (positions[0], positions[1]), antinodes: (None, None) }
+        Antenna{ positions: (positions[0], positions[1]), antinodes: Vec::new() }
     }
 
     fn point_to_antinode(&self, point: Point, grid: &Grid) -> Option<Point> {
@@ -48,9 +54,19 @@ impl Antenna {
 
     fn calc_antinodes(&mut self, grid: &Grid) -> &mut Self {
         let diff = self.diff();
-        let point_1 = Point::new(self.positions.0.x - diff.0, self.positions.0.y - diff.1);
-        let point_2 = Point::new(self.positions.1.x + diff.0, self.positions.1.y + diff.1);
-        self.antinodes = (self.point_to_antinode(point_1, grid), self.point_to_antinode(point_2, grid));
+
+        let mut point = self.positions.0;
+        while let Some(a) = self.point_to_antinode(point, grid) {
+            self.antinodes.push(a);
+            point.x += diff.0;
+            point.y += diff.1;
+        }
+        let mut point = self.positions.1;
+        while let Some(a) = self.point_to_antinode(point, grid) {
+            self.antinodes.push(a);
+            point.x -= diff.0;
+            point.y -= diff.1;
+        }
         self
     }
 
@@ -87,13 +103,11 @@ fn connect_all_points(points: Vec<Point>, grid: &Grid ) -> Vec<Antenna> {
     connections
 }
 
-fn set_grid_antinode(grid: &mut Grid, antinode: Option<Point>) -> bool {
-    if let Some(a) = antinode {
-        let (x, y) = (a.x.try_into().unwrap(), a.y.try_into().unwrap());
-        if grid.get(x, y) != '#' {
-            grid.set(x, y, '#');
-            return true;
-        }
+fn set_grid_antinode(grid: &mut Grid, a: Point) -> bool {
+    let (x, y) = (a.x.try_into().unwrap(), a.y.try_into().unwrap());
+    if grid.get(x, y) != '#' {
+        grid.set(x, y, '#');
+        return true;
     }
     false
 }
@@ -105,11 +119,10 @@ fn handle_one_layer(grid: &Grid, c: char, ) -> (Grid, i32) {
     let mut new_grid = grid.clone();
     let mut count = 0;
     connections.iter().for_each(|cn: &Antenna| {
-        if set_grid_antinode(&mut new_grid, cn.antinodes.0) {
-            count += 1;
-        }
-        if set_grid_antinode(&mut new_grid, cn.antinodes.1) {
-            count += 1;
+        for a in &cn.antinodes {
+            if set_grid_antinode(&mut new_grid, *a) {
+                count += 1;
+            }
         }
     });
     (new_grid, count)
@@ -161,7 +174,7 @@ fn handle_one_grid(input: &str) -> (Grid, i32) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("src/test_input.txt").unwrap();
+    let input = std::fs::read_to_string("src/big_input.txt").unwrap();
     let input_grid = Grid::from_string(&input);
     handle_one_grid(&input);
 }
