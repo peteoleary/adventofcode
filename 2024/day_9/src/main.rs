@@ -82,10 +82,25 @@ impl Diskmap {
             
         }
     }
+
+    fn checksum(&self) -> usize {
+        let mut sum = 0;
+        for (i, block) in self.blocks.iter().enumerate() {
+            match block {
+                Block::File {id} => sum += i * id,
+                _ => break
+            }
+        }
+        sum
+    }
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut diskmap = Diskmap::new();
+    let input = std::fs::read_to_string("src/big_input.txt").unwrap();
+    diskmap.load(&input);
+    diskmap.defrag();
+    println!("checksum: {}", diskmap.checksum());
 }
 
 #[cfg(test)]
@@ -108,20 +123,23 @@ mod tests {
         test_one_string("2333133121414131402", "00...111...2...333.44.5555.6666.777.888899");
     }
 
-    fn test_one_defrag(input: &str, expected: &str) {
+    fn test_one_defrag(input: &str, expected: &str, checksum: Option<usize>) {
         let mut diskmap = Diskmap::new();
         diskmap.load(input);
         diskmap.defrag();
         assert_eq!(diskmap.map_string(), expected);
+        if let Some(expected_checksum) = checksum {
+            assert_eq!(diskmap.checksum(), expected_checksum);
+        }
     }
 
     #[test]
     fn test_defrag_12345() {
-        test_one_defrag("12345", "022111222......");
+        test_one_defrag("12345", "022111222......", None);
     }
 
     #[test]
     fn test_defrag_2333133121414131402() {
-        test_one_defrag("2333133121414131402", "0099811188827773336446555566..............");
+        test_one_defrag("2333133121414131402", "0099811188827773336446555566..............", Some(1928));
     }
 }
