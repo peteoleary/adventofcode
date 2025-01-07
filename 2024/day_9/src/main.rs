@@ -1,3 +1,7 @@
+enum Block {
+    File {id : usize},
+    Free {}
+}
 
 #[derive(Clone)]
 struct Diskfile {
@@ -6,17 +10,13 @@ struct Diskfile {
 }
 
 struct Diskmap {
-    files: Vec<Diskfile>,
-    free_positions: Vec<usize>,
-    total_positions: usize
+    blocks: Vec<Block>
 }
 
 impl Diskmap {
     fn new() -> Diskmap {
         Diskmap {
-            files: Vec::new(),
-            free_positions: Vec::new(),
-            total_positions: 0
+            blocks: Vec::new()
         }
     }
 
@@ -25,58 +25,61 @@ impl Diskmap {
         if diskmap.len() % 2 != 0 {
             diskmap.push('0');
         }
-        for i in 0..diskmap.len() / 2 {
-            let num_blocks = diskmap.chars().nth(i * 2).unwrap().to_digit(10).unwrap() as usize;
-            let num_free = diskmap.chars().nth(i * 2 + 1).unwrap().to_digit(10).unwrap() as usize;
-            let mut positions = Vec::new();
+        for id in 0..diskmap.len() / 2 {
+            let num_blocks = diskmap.chars().nth(id * 2).unwrap().to_digit(10).unwrap() as usize;
+            let num_free = diskmap.chars().nth(id * 2 + 1).unwrap().to_digit(10).unwrap() as usize;
             for _ in 0..num_blocks {
-                positions.push(self.total_positions);
-                self.total_positions += 1;
+                self.blocks.push(Block::File {id});
             }
             for _ in 0..num_free {
-                self.free_positions.push(self.total_positions);
-                self.total_positions += 1;
+                self.blocks.push(Block::Free {});
             }
-            self.files.push(Diskfile {
-                id: i,
-                positions
-            });
         }
     }
 
     fn map_string(&self) -> String {
         let mut output = String::new();
-        for i in 0..self.total_positions {
-            if self.free_positions.contains(&i) {
-                output.push('.');
-            } else {
-                let mut found = false;
-                for file in &self.files {
-                    if file.positions.contains(&i) {
-                        output.push_str(&file.id.to_string());
-                        found = true;
-                        break;
-                    }
-                }
-                if !found {
-                    output.push('.');
-                }
+        for block in &self.blocks {
+            match block {
+                Block::File {id} => output.push_str(&id.to_string()),
+                Block::Free {} => output.push('.')
             }
         }
         output
     }
 
-    fn defrag(&mut self) {
-        for i in (0..self.files.len()).rev() {
-            let mut positions = self.files[i].positions.clone();
-            for i in (0..positions.len()).rev() {
-                positions[i] = self.free_positions[0];
-                self.free_positions.remove(0);
-                if self.free_positions.len() == 0 {
-                    return;
-                }
+    fn find_first_free(&self) -> Option<usize> {
+        for (i, block) in self.blocks.iter().enumerate() {
+            match block {
+                Block::Free {} => return Some(i),
+                _ => {}
             }
-            self.files[i].positions = positions;
+        }
+        None
+    }
+
+    fn find_last_file(&self) -> Option<usize> {
+        for (i, block) in self.blocks.iter().enumerate().rev() {
+            match block {
+                Block::File {id} => return Some(i),
+                _ => {}
+            }
+        }
+        None
+    }
+
+    fn defrag(&mut self) {
+        while let (first, last) = (self.find_first_free(), self.find_last_file()) {
+            match (first, last) {
+                (Some(f), Some(l)) => {
+                    if f > l {
+                        break;
+                    }
+                    self.blocks.swap(f, l);
+                },
+                _ => break
+            }
+            
         }
     }
 }
